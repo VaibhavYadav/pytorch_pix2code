@@ -9,14 +9,9 @@ import torch
 START_TOKEN = '<START>'
 END_TOKEN = '<END>'
 PLACEHOLDER = ' '
-CONTEXT_LENGTH = 48
-
+# CONTEXT_LENGTH = 48
 image_size = 256
 
-transform = transforms.Compose([
-    transforms.Resize([image_size, image_size]),
-    transforms.ToTensor(),
-])
 
 class Vocabulary:
     
@@ -31,26 +26,23 @@ class Vocabulary:
         self.index_to_vocab = {value:key for key, value in self.vocab_to_index.items()}
     
     def to_vec(self, word):
-        # if word.shape == ():
         vec = np.zeros(self.length)
         vec[self.vocab_to_index[word]] = 1
         return vec
-        # else:
-        #     word_index = [self.vocab_to_index[i] for i in word]
-        #     vec = np.zeros((len(word), self.length))
-        #     vec[np.arange(len(word)), word_index] = 1
-        #     return vec
             
     def to_vocab(self, index):
         return self.index_to_vocab[index]
 
 class UIDataset(data.Dataset):
     
-    def __init__(self, file_path, transform, vocab_file_path):
+    def __init__(self, file_path, vocab_file_path):
         self.file_path = file_path
         self.paths = []
         self.get_paths()
-        self.transform = transform
+        self.transform = transforms.Compose([
+            transforms.Resize([image_size, image_size]),
+            transforms.ToTensor(),
+        ])
         self.vocab = Vocabulary(vocab_file_path)
         
     def get_paths(self):
