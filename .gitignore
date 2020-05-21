@@ -1,2 +1,6 @@
 
 compiler/output.gui
+.ipynb_checkpoints/
+.vscode/
+*.pyc
+*.weights
