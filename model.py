@@ -18,26 +18,26 @@ class ImageEncoder(nn.Module):
     def forward(self, x):
         # x -> [-1, 3, 256, 256]
         
-        # x -> [-1, 32, 254, 254]
         x = F.relu(self.conv1(x))
-        # x -> [-1, 32, 252, 252]
+        # x -> [-1, 32, 254, 254]
         x = F.relu(self.conv2(x))
-        # x => [-1, 32, 126, 126]
+        # x -> [-1, 32, 252, 252]
         x = F.max_pool2d(x, 2)
+        # x -> [-1, 32, 126, 126]
         
-        # x -> [-1, 64, 124, 124]
         x = F.relu(self.conv3(x))
-        # x -> [-1, 64, 122, 122]
+        # x -> [-1, 64, 124, 124]
         x = F.relu(self.conv4(x))
-        # x => [-1, 64, 61, 61]
+        # x -> [-1, 64, 122, 122]
         x = F.max_pool2d(x, 2)
+        # x -> [-1, 64, 61, 61]
 
-        # x -> [-1, 128, 59, 59]
         x = F.relu(self.conv5(x))
-        # x -> [-1, 128, 57, 57]
+        # x -> [-1, 128, 59, 59]
         x = F.relu(self.conv6(x))
-        # x => [-1, 128, 28, 28]
+        # x -> [-1, 128, 57, 57]
         x = F.max_pool2d(x, 2)
+        # x -> [-1, 128, 28, 28]
 
         x = x.view(-1, 128*28*28)
         x = F.relu(self.fc1(x))
@@ -51,7 +51,7 @@ class ContextEncoder(nn.Module):
         self.rnn = nn.RNN(input_size=19, hidden_size=128, num_layers=2, batch_first=True)
     
     def forward(self, x, h=None):
-        # x -> [-1, seq_size=48, 19], h -> [num_layer=1,-1, 128]
+        # x -> [-1, seq_size, 19], h -> [num_layer=2,-1, 128]
 
         if not h:
             h = torch.zeros((2, x.size(0), 128)).cuda()
@@ -66,15 +66,14 @@ class Decoder(nn.Module):
         self.rnn = nn.RNN(input_size=1024+128, hidden_size=512, num_layers=2, batch_first=True)
         self.l1 = nn.Linear(512, 19)
     
-    def forward(self, image_feature, context_feature, h = None):
-        # image_feature -> [-1, 1024], context_feature -> [-1, seq_size=48, 128], h -> [num_layer=1, -1, 512]
-        # image_feature -> [-1, 1, 1024]
+    def forward(self, image_feature, context_feature, on_cuda = False, h = None):
+        # image_feature -> [-1, 1024], context_feature -> [-1, seq_size=48, 128], h -> [num_layer=2, -1, 512]
         image_feature = image_feature.unsqueeze(1)
-        # image_feature -> [-1, seq_size=48, 1024]
-        # image_feature = image_feature.repeat(context_feature.size(0), 48, 1)
+        # image_feature -> [-1, 1, 1024]
         image_feature = image_feature.repeat(1, context_feature.size(1), 1)
-        # x -> [-1, seq_size=48, 1024+128]
+        # image_feature -> [-1, seq_size, 1024]
         x = torch.cat((image_feature, context_feature), 2)
+        # x -> [-1, seq_size=48, 1024+128]
 
         if not h:
             h = torch.zeros((2, x.size(0), 512)).cuda()

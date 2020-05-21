@@ -29,7 +29,7 @@ class Vocabulary:
         vec = np.zeros(self.length)
         vec[self.vocab_to_index[word]] = 1
         return vec
-            
+       
     def to_vocab(self, index):
         return self.index_to_vocab[index]
 
@@ -57,10 +57,7 @@ class UIDataset(data.Dataset):
     
     def __getitem__(self, index):
         image = self.transform(Image.open('{}/{}.png'.format(self.file_path, self.paths[index])))[:-1]
-        image = image.unsqueeze(0)
         context, prediction = self.read_gui('{}/{}.gui'.format(self.file_path, self.paths[index]))
-        context = torch.from_numpy(context).unsqueeze(0)
-        prediction = torch.from_numpy(prediction).unsqueeze(0)
         return image, context, prediction
     
     def read_gui(self, file_path):
@@ -81,6 +78,7 @@ class UIDataset(data.Dataset):
         # Generates cotext prediction pair
         context = token_sequence[:-1]
         prediction = token_sequence[1:]
+        
         # suffix = [PLACEHOLDER] * CONTEXT_LENGTH
         # a = np.concatenate([suffix, token_sequence])
         # for j in range(len(token_sequence)):
@@ -93,13 +91,7 @@ class UIDataset(data.Dataset):
         for word in prediction:
             prediction_vec.append(self.vocab.to_vec(word))
         context_vec = []
-        for word_vec in context:
-            context_vec.append(self.vocab.to_vec(word_vec))
+        for word in context:
+            context_vec.append(self.vocab.to_vec(word))
         
-        return np.array(context_vec), np.array(prediction_vec)
-        
-    def write_gui(self):
-        pass
-    
-    def get_vocab_len(self):
-        return self.vocab.length
+        return torch.tensor(context_vec, dtype=torch.float), torch.tensor(prediction_vec, dtype=torch.float)
